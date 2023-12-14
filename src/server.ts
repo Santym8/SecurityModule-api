@@ -7,7 +7,8 @@ import { IController } from './utils/IController';
 
 //----------Configurations----------
 import express from 'express';
-import * as dotenv from 'dotenv';
+import { DataSource } from 'typeorm';
+import { DataSourceConfig } from './config/data-base/DataSourceConfig';
 
 //------------Midlewares-----------
 import compression from 'compression';
@@ -16,7 +17,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 //------------Controllers--------
-import { ExampleController } from './modules/example/ExampleController';
+import { UserController } from './modules/User/Controller/UserController';
 
 
 export class Server {
@@ -24,7 +25,7 @@ export class Server {
     private app: express.Application;
 
     private urlControllers: { url: string, controller: IController }[] = [
-        { url: '/example', controller: Container.get(ExampleController) },
+        { url: '/api/user', controller: Container.get(UserController) }
     ];
 
     constructor() {
@@ -53,13 +54,17 @@ export class Server {
     }
 
     private config() {
-        dotenv.config();
+        
         this.app.set('port', process.env.PORT || 3000);
 
-        // new DataBase().configDataBase();
-        // if (process.env.POPULATE == 'true') {
-        //     new PopulateDataBase().populate();
-        // }
+        Container.get(DataSourceConfig).getDataSource().initialize()
+            .then((dataSource: DataSource) => {
+                Container.set('DataSource', dataSource);
+            })
+            .catch((error: any) => {
+                console.log(error);
+            });
+
 
         this.addMiddlewares();
         this.addRouters()
